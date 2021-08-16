@@ -1,0 +1,91 @@
+---
+title: "Tidying Data"
+author: "Scout Leonard"
+date: "8/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+```
+
+## Read in the wb_indicators.csv file, make sure to specify `na.rm = c("..,")`
+
+```{r}
+wb_indicators <- read_csv(here("data", "wb_indicators.csv"), na = c("..",""))
+```
+
+## Reshape so that year is a single column 
+
+```{r}
+wb_indicators_long <- wb_indicators %>% 
+  pivot_longer(cols = `2001 [YR2001]`:`2020 [YR2020]`,
+               names_to = "year",
+               values_to = "indicator_value")
+```
+
+There are no rules about the bumber of things you can do in a pipe sequence. We can do this next part in the code above, but we are breaking it up to understand outputs. 
+
+## Clean up the year column
+The current class of the year column is character, but we want it to be numeric. 
+
+```{r}
+wb_data_sep <- wb_indicators_long %>% 
+  separate(col = year, into = c("year", "year_chr"), sep =  " ") %>% 
+  select(-c(year_chr, 'Country Code', 'Series Code'))
+```
+
+```{r}
+df <- tribble(
+  ~name, ~A, ~B, ~C,
+  "teddy", 4, 5, 6,
+  "khora", 9, 10, 11
+)
+
+df
+
+# If A, B, C are different dog food types, convert this into tidy format
+
+df_long <- df %>% 
+  pivot_longer(cols = A:C, 
+               names_to = "dog_food_type",
+               values_to = "rankings")
+```
+
+You can think of a tibble as a dataframe. 
+
+# Pivot wider to get all indicators in their own column
+
+```{r}
+wb_data_tidy <- wb_data_sep %>% 
+  drop_na('Series Name') %>% 
+  pivot_wider(names_from = 'Series Name', values_from = indicator_value)
+```
+
+
+##Pivot df long so dog food types are in their columns again
+```{r}
+df_wide <- df_long %>% 
+  pivot_wider(names_from = dog_food_type, 
+              values_from = rankings)
+```
+
+## Rename columns
+
+```{r}
+# for renaming multiple columns
+names(wb_data_tidy) <- c("country", "year", "access_clean_fuels", "access_electricity", "co2_emissions", "fossil_fuel_cons", "water_stress")
+
+# for renaming just 1 column: (takes less time! new name is first in newname( new name = old name))
+wb_data_tidy <- wb_data_tidy %>% 
+  rename(country_name = country)
+```
+
+
+
+
+
+
